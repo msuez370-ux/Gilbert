@@ -115,4 +115,13 @@ INSERT IGNORE INTO products (category_id, nom, slug, description, prix, stock, i
 
 -- Admin par défaut (password: Admin1234! — à changer)
 INSERT IGNORE INTO admins (email, password) VALUES
-  ('admin@jouve-scelles.fr', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+  ('admin@jouve-scelles.fr', '$2a$10$S/L50/AcXmVQ5exQBa7mXuBa0IwLbDkWnNGFXIk8Df7OK6yoFbU/.');
+
+-- Corrections images et prix (ajoutées après déploiement initial)
+UPDATE products SET image='/img/produits/scelles-flash-tube.jpg' WHERE slug='scelles-flash-tube';
+UPDATE products SET image='/img/produits/pack-scelles-flash-complet.jpg' WHERE slug='pack-scelles-flash-complet';
+UPDATE products SET image='/img/produits/malette-intervention-eco.jpg' WHERE slug='malette-intervention-eco';
+UPDATE products SET image='/img/produits/scelles-flash-5-tubes.jpg' WHERE slug='scelles-flash-5-tubes';
+UPDATE products SET prix=39.00, nom='BOÎTE DE 10 BÂTONS DE CIRE ADMINISTRATIVE' WHERE slug='batons-cire-cacheter';
+UPDATE products SET prix=180.00 WHERE slug='malette-intervention-lux';
+UPDATE products SET prix=149.00 WHERE slug='malette-intervention-eco';
