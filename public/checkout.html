@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commande — Les Scellés Jouve</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .checkout-wrap { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 380px; gap: 2rem; align-items: start; }
+    .checkout-form { background: #fff; border-radius: 12px; box-shadow: var(--shadow); padding: 2rem; }
+    .checkout-form h3 { color: var(--bleu); margin-bottom: 1rem; font-size: 1.1rem; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-weight: 600; margin-bottom: .35rem; font-size: .88rem; color: var(--bleu); }
+    .field input, .field textarea { width: 100%; padding: .65rem 1rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: .95rem; }
+    .field input:focus, .field textarea:focus { outline: none; border-color: var(--or); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .recap { background: #fff; border-radius: 12px; box-shadow: var(--shadow); padding: 1.5rem; position: sticky; top: 80px; }
+    .recap h3 { color: var(--bleu); margin-bottom: 1rem; }
+    .recap-item { display: flex; justify-content: space-between; padding: .5rem 0; font-size: .9rem; border-bottom: 1px solid #f0f0f0; }
+    .recap-item .q { color: #888; }
+    .recap-total { display: flex; justify-content: space-between; padding-top: 1rem; margin-top: .5rem; font-size: 1.2rem; font-weight: 700; color: var(--bleu); }
+    .pay-methods { display: flex; gap: 1rem; margin: 1rem 0; }
+    .pay-method { flex: 1; border: 2px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; cursor: pointer; font-weight: 600; transition: all .2s; }
+    .pay-method:has(input:checked) { border-color: var(--or); background: #fdf8ec; }
+    .pay-method input { margin-right: .4rem; }
+    .devis-notice { background: #fff8e1; border-left: 3px solid #f39c12; padding: .8rem 1rem; border-radius: 6px; font-size: .85rem; color: #8a6d3b; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><img src="/img/logo-jouve.svg" alt="Les Scellés Jouve" style="height:44px;width:auto"></a>
+  <ul>
+    <li><a href="/#catalogue">Catalogue</a></li>
+    <li><a href="/configurateur.html">Configurateur</a></li>
+  </ul>
+  <div class="cart-icon" onclick="window.location='/panier.html'">🛒 <span id="cart-badge">0</span></div>
+</nav>
+
+<section class="section">
+  <h2 class="section-title">Finaliser ma commande</h2>
+  <div class="checkout-wrap">
+    <div class="checkout-form">
+      <h3>Vos coordonnées</h3>
+      <div class="field">
+        <label>Nom / Raison sociale *</label>
+        <input type="text" id="nom" placeholder="Étude Maître Dupont">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Email *</label>
+          <input type="email" id="email" placeholder="contact@etude.fr">
+        </div>
+        <div class="field">
+          <label>Téléphone</label>
+          <input type="tel" id="tel" placeholder="06 12 34 56 78">
+        </div>
+      </div>
+      <div class="field">
+        <label>Adresse de livraison complète *</label>
+        <textarea id="adresse" rows="3" placeholder="N°, rue, code postal, ville"></textarea>
+      </div>
+
+      <h3 style="margin-top:1.5rem">Mode de paiement</h3>
+      <div class="pay-methods">
+        <label class="pay-method"><input type="radio" name="pay" value="stripe" checked> Carte bancaire</label>
+        <label class="pay-method"><input type="radio" name="pay" value="paypal"> PayPal</label>
+      </div>
+      <div id="card-zone" style="display:none;margin-top:1rem">
+        <label style="display:block;font-weight:600;margin-bottom:.4rem;font-size:.88rem;color:var(--bleu)">Carte bancaire</label>
+        <div id="card-element" style="padding:.8rem 1rem;border:1.5px solid #ddd;border-radius:8px;background:#fff"></div>
+        <div id="card-error" style="color:#c0392b;font-size:.85rem;margin-top:.5rem"></div>
+      </div>
+      <button class="btn btn-or" style="width:100%;padding:1rem;margin-top:1rem" onclick="validerCommande()">
+        Valider et payer
+      </button>
+    </div>
+
+    <div class="recap">
+      <h3>Récapitulatif</h3>
+      <div id="recap-items"></div>
+     <div class="recap-item" style="border-bottom:none"><span>Frais de port</span><span id="recap-port">15,00 €</span></div>
+      <div class="recap-total"><span>Total</span><span id="recap-total">0,00 €</span></div>
+      <div id="devis-notice"></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 Les Scellés Jouve — <a href="/cgv.html">CGV</a> — <a href="/mentions-legales.html">Mentions légales</a></p>
+</footer>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="/js/cart.js"></script>
+<script>
+const stripe = Stripe("pk_test_51TrYJXHwYqDBsg3Ix847eGmNpcPoqJ9ZwaBrozldOzbwx0tWcL5fgYK5BPBPQdLnjkuQxRaLSVwIKJfzIE2OC79W00Bd4CSovi");
+let cardElement = null;
+
+function renderRecap() {
+  const container = document.getElementById('recap-items');
+  if (!Cart.items.length) { window.location = '/panier.html'; return; }
+  container.innerHTML = Cart.items.map(item => {
+    const prix = Number(item.prix);
+    const isDevis = prix === 0;
+    return '<div class="recap-item"><span>' + item.nom + ' <span class="q">x' + item.quantite + '</span></span><span>' + (isDevis ? 'Sur devis' : (prix * item.quantite).toFixed(2) + ' EUR') + '</span></div>';
+  }).join('');
+  const sousTotal = Cart.items.reduce((sum, i) => sum + Number(i.prix) * i.quantite, 0);
+  const fraisPort = 15;
+  const total = sousTotal + fraisPort;
+  document.getElementById('recap-port').textContent = fraisPort.toFixed(2) + ' EUR';
+  document.getElementById('recap-total').textContent = total.toFixed(2) + ' EUR';
+  const hasDevis = Cart.items.some(i => Number(i.prix) === 0);
+  document.getElementById('devis-notice').innerHTML = hasDevis
+    ? '<div class="devis-notice">Certains articles sont sur devis. Le montant final vous sera confirme par email avant tout paiement.</div>'
+    : '';
+}
+
+function initCard() {
+  const elements = stripe.elements();
+  cardElement = elements.create('card', { hidePostalCode: false });
+  cardElement.mount('#card-element');
+  cardElement.on('change', e => {
+    document.getElementById('card-error').textContent = e.error ? e.error.message : '';
+  });
+}
+
+document.querySelectorAll('input[name="pay"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const cardZone = document.getElementById('card-zone');
+    if (r.value === 'stripe' && r.checked) {
+      cardZone.style.display = 'block';
+      if (!cardElement) initCard();
+    } else {
+      cardZone.style.display = 'none';
+    }
+  });
+});
+
+async function validerCommande() {
+  const nom = document.getElementById('nom').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const adresse = document.getElementById('adresse').value.trim();
+  if (!nom || !email || !adresse) {
+    alert('Merci de remplir les champs obligatoires (nom, email, adresse).');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Adresse email invalide.'); return; }
+
+  const paymentMethod = document.querySelector('input[name="pay"]:checked').value;
+  const sousTotal = Cart.items.reduce((sum, i) => sum + Number(i.prix) * i.quantite, 0);
+  const total = sousTotal + 15;
+
+  if (total <= 0) {
+    alert('Votre panier ne contient que des articles sur devis. Nous vous contacterons par email pour le montant final.');
+    return;
+  }
+
+  if (paymentMethod === 'stripe') {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Paiement en cours...';
+    try {
+      const res = await fetch('/api/payment/stripe/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: total })
+      });
+      const { clientSecret, error } = await res.json();
+      if (error) throw new Error(error);
+
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: { card: cardElement, billing_details: { name: nom, email: email } }
+      });
+
+      if (result.error) {
+        document.getElementById('card-error').textContent = result.error.message;
+        btn.disabled = false;
+        btn.textContent = 'Valider et payer';
+      } else if (result.paymentIntent.status === 'succeeded') {
+        const orderItems = Cart.items.map(i => ({
+          product_id: i.custom ? null : i.id,
+          nom_produit: i.nom,
+          quantite: i.quantite,
+          prix_unitaire: Number(i.prix),
+          custom: i.custom || null
+        }));
+        const orderRes = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client: { nom: nom, email: email, tel: document.getElementById('tel').value.trim(), adresse: adresse },
+            items: orderItems,
+            payment_method: 'stripe',
+            payment_id: result.paymentIntent.id,
+            frais_port: 15
+          })
+        });
+        const orderData = await orderRes.json();
+        Cart.clear();
+        if (orderData.success) {
+          alert('Paiement reussi ! Votre commande ' + orderData.reference + ' est enregistree.');
+        } else {
+          alert('Paiement reussi, mais souci a l enregistrement. Reference paiement : ' + result.paymentIntent.id);
+        }
+        window.location = '/';
+      }
+    } catch (e) {
+      document.getElementById('card-error').textContent = 'Erreur : ' + e.message;
+      btn.disabled = false;
+      btn.textContent = 'Valider et payer';
+    }
+  } else {
+    alert('Le paiement PayPal sera disponible prochainement.');
+  }
+}
+
+renderRecap();
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les Scellés Jouve — Matériel professionnel de scellés</title>
+  <meta name="description" content="Spécialiste des produits de scellés pour huissiers, notaires, pompes funèbres et mairies. Cachets laiton personnalisables, scellés flash, briquets professionnels.">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><img src="/img/logo-jouve.svg" alt="Les Scellés Jouve" style="height:44px;width:auto"></a>
+  <ul>
+    <li><a href="/#catalogue">Catalogue</a></li>
+    <li><a href="/configurateur.html">Configurateur</a></li>
+    <li><a href="/contact.html">Contact</a></li>
+  </ul>
+  <div class="cart-icon" onclick="window.location='/panier.html'">
+    🛒 <span id="cart-badge">0</span>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Matériel professionnel de scellés</h1>
+  <p>Cachets laiton personnalisés, scellés flash et accessoires pour huissiers, notaires, pompes funèbres et mairies.</p>
+  <a href="#catalogue" class="btn btn-or">Voir le catalogue</a>
+  &nbsp;
+  <a href="/configurateur.html" class="btn btn-outline">Configurer mon cachet</a>
+</section>
+
+<section class="section" id="catalogue">
+  <h2 class="section-title">Notre catalogue</h2>
+  <div class="grid" id="products-grid">
+    <p style="text-align:center;color:#999">Chargement des produits...</p>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 Les Scellés Jouve — <a href="/cgv.html">CGV</a> — <a href="/mentions-legales.html">Mentions légales</a></p>
+</footer>
+
+<script src="/js/cart.js"></script>
+<script>
+async function loadProducts() {
+  const grid = document.getElementById('products-grid');
+  try {
+    const res = await fetch('/api/products');
+    const products = await res.json();
+    if (!products.length) { grid.innerHTML = '<p>Aucun produit disponible.</p>'; return; }
+    grid.innerHTML = products.map(p => `
+      <div class="card">
+        <img src="${p.image || '/img/placeholder.png'}" alt="${p.nom}" onerror="this.src='/img/placeholder.png'">
+        <div class="card-body">
+          <h3>${p.nom}</h3>
+          <p>${(p.description || '').substring(0, 100)}...</p>
+        </div>
+        <div class="card-footer">
+          <span class="prix">${Number(p.prix) > 0 ? Number(p.prix).toFixed(2) + ' €' : 'Sur devis'}</span>
+          ${p.is_personnalisable ? '<span class="badge-perso">Personnalisable</span>' : ''}
+          <button class="btn btn-or" style="padding:.4rem 1rem;font-size:.85rem"
+            onclick="${p.is_personnalisable ? "window.location='/configurateur.html'" : `Cart.add({id:${p.id},nom:'${p.nom.replace(/'/g,"\\'")}',prix:${p.prix}});alert('Ajouté au panier !')`}">
+            ${p.is_personnalisable ? 'Configurer' : 'Ajouter'}
+          </button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { grid.innerHTML = '<p style="color:red">Erreur de chargement.</p>'; }
+}
+loadProducts();
+</script>
+</body>
+</html>

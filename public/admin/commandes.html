@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commandes — Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .admin-nav { background: var(--bleu); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .admin-nav .logo { color: var(--or); font-weight: 700; }
+    .admin-nav a { color: #ccc; text-decoration: none; margin-left: 1.5rem; font-size: .9rem; }
+    .admin-nav a:hover { color: var(--or); }
+    .admin-wrap { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+    .tabs { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+    .tab { padding: .6rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; background: #fff; box-shadow: var(--shadow); border: 2px solid transparent; }
+    .tab.active { border-color: var(--or); color: var(--or-dark); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+    th { background: var(--bleu); color: #fff; padding: .8rem 1rem; text-align: left; font-size: .85rem; }
+    td { padding: .8rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: .88rem; }
+    tr:hover { background: #fafafa; }
+    .empty { text-align: center; padding: 3rem; color: #999; }
+    .statut { font-size: .75rem; padding: .2rem .7rem; border-radius: 12px; font-weight: 600; }
+    .s-attente { background: #fff3cd; color: #856404; }
+    .s-envoye { background: #cce5ff; color: #004085; }
+    .s-valide { background: #d4edda; color: #155724; }
+    .s-refuse { background: #f8d7da; color: #721c24; }
+    .bat-select { padding: .3rem .6rem; border-radius: 6px; border: 1px solid #ddd; font-size: .82rem; }
+    .section-view { display: none; }
+    .section-view.active { display: block; }
+  </style>
+</head>
+<body style="background:#f5f5f5">
+
+<div class="admin-nav">
+  <span class="logo" style="display:flex;align-items:center;gap:10px"><img src="/img/logo-jouve.svg" alt="Jouve" style="height:40px;width:auto;background:#fff;border-radius:50%;padding:2px"> Admin</span>
+  <div>
+    <a href="/admin/dashboard.html">Tableau de bord</a>
+    <a href="/admin/produits.html">Produits</a>
+    <a href="/admin/commandes.html">Commandes</a>
+    <a href="/" target="_blank">Voir le site</a>
+    <a href="#" onclick="logout()">Déconnexion</a>
+  </div>
+</div>
+
+<div class="admin-wrap">
+  <h1 style="color:var(--bleu);margin-bottom:1.5rem">Commandes</h1>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('commandes')" id="tab-commandes">Commandes clients</div>
+    <div class="tab" onclick="switchTab('cachets')" id="tab-cachets">Cachets à traiter (BAT)</div>
+  </div>
+
+  <div class="section-view active" id="view-commandes">
+    <table>
+      <thead>
+        <tr><th>Référence</th><th>Client</th><th>Email</th><th>Total</th><th>Statut</th><th>Date</th></tr>
+      </thead>
+      <tbody id="commandes-body"></tbody>
+    </table>
+    <div class="empty" id="commandes-empty" style="display:none">Aucune commande pour le moment.</div>
+  </div>
+
+  <div class="section-view" id="view-cachets">
+    <table>
+      <thead>
+        <tr><th>Réf. commande</th><th>Client</th><th>Ø</th><th>Ligne haut</th><th>Ligne bas</th><th>Qté</th><th>Logo</th><th>Statut BAT</th></tr>
+      </thead>
+      <tbody id="cachets-body"></tbody>
+    </table>
+    <div class="empty" id="cachets-empty" style="display:none">Aucun cachet à traiter pour le moment.</div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('view-' + tab).classList.add('active');
+}
+
+async function loadCommandes() {
+  try {
+    const cmd = await fetch('/api/orders').then(r => r.json());
+    const body = document.getElementById('commandes-body');
+    if (!Array.isArray(cmd) || !cmd.length) {
+      document.getElementById('commandes-empty').style.display = 'block';
+      return;
+    }
+    body.innerHTML = cmd.map(c => `
+      <tr>
+        <td><strong>${c.reference}</strong></td>
+        <td>${c.client_nom}</td>
+        <td>${c.client_email}</td>
+        <td>${Number(c.total).toFixed(2)} €</td>
+        <td><span class="statut s-attente">${c.statut}</span></td>
+        <td>${new Date(c.created_at).toLocaleDateString('fr-FR')}</td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('commandes-empty').style.display = 'block';
+  }
+}
+
+async function loadCachets() {
+  try {
+    const cachets = await fetch('/api/configurateur/orders').then(r => r.json());
+    const body = document.getElementById('cachets-body');
+    if (!Array.isArray(cachets) || !cachets.length) {
+      document.getElementById('cachets-empty').style.display = 'block';
+      return;
+    }
+    body.innerHTML = cachets.map(c => `
+      <tr>
+        <td>${c.reference || '—'}</td>
+        <td>${c.client_nom || '—'}</td>
+        <td>${c.diametre}mm</td>
+        <td>${c.texte_haut || '—'}</td>
+        <td>${c.texte_bas || '—'}</td>
+        <td>${c.quantite}</td>
+        <td>${c.logo_path ? '<a href="' + c.logo_path + '" target="_blank">Voir</a>' : '—'}</td>
+        <td>
+          <select class="bat-select" onchange="updateBat(${c.id}, this.value)">
+            <option value="en_attente" ${c.statut_bat==='en_attente'?'selected':''}>En attente</option>
+            <option value="envoye" ${c.statut_bat==='envoye'?'selected':''}>BAT envoyé</option>
+            <option value="valide" ${c.statut_bat==='valide'?'selected':''}>Validé</option>
+            <option value="refuse" ${c.statut_bat==='refuse'?'selected':''}>Refusé</option>
+          </select>
+        </td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('cachets-empty').style.display = 'block';
+  }
+}
+
+async function updateBat(id, statut) {
+  try {
+    await fetch('/api/configurateur/orders/' + id + '/bat', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ statut_bat: statut })
+    });
+  } catch(e) { alert('Erreur lors de la mise à jour du statut.'); }
+}
+
+async function logout() {
+  await fetch('/api/admin/logout', { method: 'POST' });
+  window.location = '/admin/login.html';
+}
+
+loadCommandes();
+loadCachets();
+</script>
+</body>
+</html>

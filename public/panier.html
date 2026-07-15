@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon panier — Les Scellés Jouve</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .panier-wrap { max-width: 900px; margin: 0 auto; }
+    .panier-item { display: grid; grid-template-columns: 80px 1fr auto auto auto; gap: 1rem; align-items: center; padding: 1rem; background: #fff; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 1rem; }
+    .panier-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; }
+    .panier-item .nom { font-weight: 600; color: var(--bleu); font-size: .95rem; }
+    .panier-item .meta { font-size: .8rem; color: #888; margin-top: .25rem; }
+    .qty-control { display: flex; align-items: center; gap: .5rem; }
+    .qty-control button { width: 28px; height: 28px; border: 1px solid #ddd; background: #f5f5f5; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
+    .qty-control input { width: 44px; text-align: center; padding: .3rem; border: 1px solid #ddd; border-radius: 6px; }
+    .item-total { font-weight: 700; color: var(--or-dark); min-width: 80px; text-align: right; }
+    .btn-remove { background: none; border: none; color: #c0392b; cursor: pointer; font-size: 1.3rem; }
+    .panier-summary { background: #fff; border-radius: 12px; box-shadow: var(--shadow); padding: 1.5rem; margin-top: 1.5rem; }
+    .summary-line { display: flex; justify-content: space-between; padding: .5rem 0; }
+    .summary-total { display: flex; justify-content: space-between; padding: 1rem 0; border-top: 2px solid #eee; margin-top: .5rem; font-size: 1.3rem; font-weight: 700; color: var(--bleu); }
+    .empty-cart { text-align: center; padding: 4rem 2rem; color: #999; }
+    .badge-devis { background: #f39c12; color: #fff; font-size: .7rem; padding: .15rem .5rem; border-radius: 20px; }
+    .badge-perso-item { background: var(--or); color: var(--bleu); font-size: .7rem; padding: .15rem .5rem; border-radius: 20px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><img src="/img/logo-jouve.svg" alt="Les Scellés Jouve" style="height:44px;width:auto"></a>
+  <ul>
+    <li><a href="/#catalogue">Catalogue</a></li>
+    <li><a href="/configurateur.html">Configurateur</a></li>
+    <li><a href="/contact.html">Contact</a></li>
+  </ul>
+  <div class="cart-icon" onclick="window.location='/panier.html'">🛒 <span id="cart-badge">0</span></div>
+</nav>
+
+<section class="section panier-wrap">
+  <h2 class="section-title">Mon panier</h2>
+  <div id="panier-content"></div>
+</section>
+
+<footer>
+  <p>© 2025 Les Scellés Jouve — <a href="/cgv.html">CGV</a> — <a href="/mentions-legales.html">Mentions légales</a></p>
+</footer>
+
+<script src="/js/cart.js"></script>
+<script>
+function renderPanier() {
+  const container = document.getElementById('panier-content');
+  if (!Cart.items.length) {
+    container.innerHTML = `
+      <div class="empty-cart">
+        <p style="font-size:1.2rem;margin-bottom:1rem">Votre panier est vide</p>
+        <a href="/#catalogue" class="btn btn-or">Voir le catalogue</a>
+      </div>`;
+    return;
+  }
+
+  const itemsHtml = Cart.items.map((item, index) => {
+    const prix = Number(item.prix);
+    const isDevis = prix === 0;
+    const ligneTotal = prix * item.quantite;
+    let metaInfo = '';
+    if (item.custom) {
+      metaInfo = `<div class="meta">
+        <span class="badge-perso-item">Personnalisé</span>
+        Ø ${item.custom.diametre}mm · Haut: "${item.custom.texte_haut || '—'}" · Bas: "${item.custom.texte_bas || '—'}"
+      </div>`;
+    }
+    return `
+      <div class="panier-item">
+        <img src="${item.image || '/img/placeholder.png'}" onerror="this.src='/img/placeholder.png'" alt="${item.nom}">
+        <div>
+          <div class="nom">${item.nom} ${isDevis ? '<span class="badge-devis">Sur devis</span>' : ''}</div>
+          ${metaInfo}
+        </div>
+        <div class="qty-control">
+          <button onclick="changeQty(${index}, -1)">−</button>
+          <input type="number" value="${item.quantite}" min="1" onchange="setQty(${index}, this.value)">
+          <button onclick="changeQty(${index}, 1)">+</button>
+        </div>
+        <div class="item-total">${isDevis ? '—' : ligneTotal.toFixed(2) + ' €'}</div>
+        <button class="btn-remove" onclick="removeItem(${index})" title="Retirer">🗑</button>
+      </div>`;
+  }).join('');
+
+  const total = Cart.items.reduce((sum, i) => sum + Number(i.prix) * i.quantite, 0);
+  const hasDevis = Cart.items.some(i => Number(i.prix) === 0);
+
+  container.innerHTML = itemsHtml + `
+    <div class="panier-summary">
+      <div class="summary-line"><span>Sous-total</span><span>${total.toFixed(2)} €</span></div>
+      <div class="summary-line" style="color:#888;font-size:.9rem"><span>Livraison</span><span>Calculée à l'étape suivante</span></div>
+      ${hasDevis ? '<div class="summary-line" style="color:#f39c12;font-size:.85rem"><span>⚠ Certains articles sont sur devis</span><span>Prix confirmé par email</span></div>' : ''}
+      <div class="summary-total"><span>Total</span><span>${total.toFixed(2)} €</span></div>
+      <button class="btn btn-or" style="width:100%;padding:1rem;margin-top:1rem" onclick="window.location='/checkout.html'">
+        Passer la commande
+      </button>
+      <button class="btn btn-outline" style="width:100%;padding:.6rem;margin-top:.5rem" onclick="window.location='/#catalogue'">
+        Continuer mes achats
+      </button>
+    </div>`;
+}
+
+function changeQty(index, delta) {
+  const newQty = Cart.items[index].quantite + delta;
+  if (newQty < 1) return;
+  Cart.items[index].quantite = newQty;
+  Cart.save(); Cart.updateBadge(); renderPanier();
+}
+function setQty(index, val) {
+  const q = parseInt(val);
+  if (q >= 1) { Cart.items[index].quantite = q; Cart.save(); Cart.updateBadge(); renderPanier(); }
+}
+function removeItem(index) {
+  Cart.items.splice(index, 1);
+  Cart.save(); Cart.updateBadge(); renderPanier();
+}
+
+renderPanier();
+</script>
+</body>
+</html>

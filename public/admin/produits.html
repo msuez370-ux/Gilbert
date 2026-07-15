@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produits — Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .admin-nav { background: var(--bleu); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .admin-nav .logo { color: var(--or); font-weight: 700; }
+    .admin-nav a { color: #ccc; text-decoration: none; margin-left: 1.5rem; font-size: .9rem; }
+    .admin-nav a:hover { color: var(--or); }
+    .admin-wrap { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+    th { background: var(--bleu); color: #fff; padding: .8rem 1rem; text-align: left; font-size: .85rem; }
+    td { padding: .8rem 1rem; border-bottom: 1px solid #f0f0f0; font-size: .9rem; }
+    tr:hover { background: #fafafa; }
+    .prix-cell { font-weight: 600; color: var(--or-dark); }
+    .devis-tag { background: #f39c12; color: #fff; font-size: .7rem; padding: .15rem .5rem; border-radius: 10px; }
+    .btn-edit { background: var(--or); color: var(--bleu); border: none; padding: .4rem .9rem; border-radius: 6px; cursor: pointer; font-size: .82rem; font-weight: 600; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+    .modal.open { display: flex; }
+    .modal-content { background: #fff; border-radius: 12px; padding: 2rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .modal-content h3 { color: var(--bleu); margin-bottom: 1rem; }
+    .field { margin-bottom: 1rem; }
+    .field label { display: block; font-weight: 600; margin-bottom: .3rem; font-size: .85rem; color: var(--bleu); }
+    .field input, .field textarea { width: 100%; padding: .6rem 1rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: .9rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+  </style>
+</head>
+<body style="background:#f5f5f5">
+
+<div class="admin-nav">
+  <span class="logo" style="display:flex;align-items:center;gap:10px"><img src="/img/logo-jouve.svg" alt="Jouve" style="height:40px;width:auto;background:#fff;border-radius:50%;padding:2px"> Admin</span>
+  <div>
+    <a href="/admin/dashboard.html">Tableau de bord</a>
+    <a href="/admin/produits.html">Produits</a>
+    <a href="/admin/commandes.html">Commandes</a>
+    <a href="/" target="_blank">Voir le site</a>
+    <a href="#" onclick="logout()">Déconnexion</a>
+  </div>
+</div>
+
+<div class="admin-wrap">
+  <h1 style="color:var(--bleu);margin-bottom:1.5rem">Gestion des produits</h1>
+  <table>
+    <thead>
+      <tr><th>Produit</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th>Actif</th><th></th></tr>
+    </thead>
+    <tbody id="produits-body"></tbody>
+  </table>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3>Modifier le produit</h3>
+    <input type="hidden" id="edit-id">
+    <div class="field">
+      <label>Nom</label>
+      <input type="text" id="edit-nom">
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea id="edit-description" rows="3"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Prix (€)</label>
+        <input type="number" id="edit-prix" step="0.01" min="0">
+      </div>
+      <div class="field">
+        <label>Stock</label>
+        <input type="number" id="edit-stock" min="0">
+      </div>
+    </div>
+    <div class="field">
+      <label>URL de l'image</label>
+      <input type="text" id="edit-image">
+    </div>
+    <div class="field">
+      <label><input type="checkbox" id="edit-active"> Produit actif (visible sur le site)</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-or" style="flex:1" onclick="saveProduct()">Enregistrer</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let produits = [];
+
+async function loadProduits() {
+  produits = await fetch('/api/products').then(r => r.json());
+  document.getElementById('produits-body').innerHTML = produits.map(p => {
+    const prix = Number(p.prix);
+    return `
+      <tr>
+        <td>${p.nom}</td>
+        <td>${p.categorie || '—'}</td>
+        <td class="prix-cell">${prix > 0 ? prix.toFixed(2) + ' €' : '<span class="devis-tag">Sur devis</span>'}</td>
+        <td>${p.stock}</td>
+        <td>${p.is_active ? '✅' : '❌'}</td>
+        <td><button class="btn-edit" onclick="openModal(${p.id})">Modifier</button></td>
+      </tr>`;
+  }).join('');
+}
+
+function openModal(id) {
+  const p = produits.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('edit-id').value = p.id;
+  document.getElementById('edit-nom').value = p.nom;
+  document.getElementById('edit-description').value = p.description || '';
+  document.getElementById('edit-prix').value = Number(p.prix);
+  document.getElementById('edit-stock').value = p.stock;
+  document.getElementById('edit-image').value = p.image || '';
+  document.getElementById('edit-active').checked = !!p.is_active;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+async function saveProduct() {
+  const id = document.getElementById('edit-id').value;
+  const body = {
+    nom: document.getElementById('edit-nom').value,
+    description: document.getElementById('edit-description').value,
+    prix: parseFloat(document.getElementById('edit-prix').value) || 0,
+    stock: parseInt(document.getElementById('edit-stock').value) || 0,
+    image: document.getElementById('edit-image').value,
+    is_active: document.getElementById('edit-active').checked ? 1 : 0
+  };
+  try {
+    const res = await fetch('/api/products/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal();
+      loadProduits();
+    } else {
+      alert('Erreur : ' + (data.error || 'échec de la mise à jour'));
+    }
+  } catch(e) { alert('Erreur de connexion.'); }
+}
+
+async function logout() {
+  await fetch('/api/admin/logout', { method: 'POST' });
+  window.location = '/admin/login.html';
+}
+
+loadProduits();
+</script>
+</body>
+</html>

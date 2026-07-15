@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurateur Cachet Laiton — Les Scellés Jouve</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav>
+  <a href="/" class="logo"><img src="/img/logo-jouve.svg" alt="Les Scellés Jouve" style="height:44px;width:auto"></a>
+  <ul>
+    <li><a href="/#catalogue">Catalogue</a></li>
+    <li><a href="/configurateur.html">Configurateur</a></li>
+    <li><a href="/contact.html">Contact</a></li>
+  </ul>
+  <div class="cart-icon" onclick="window.location='/panier.html'">🛒 <span id="cart-badge">0</span></div>
+</nav>
+
+<section class="section">
+  <h2 class="section-title">Configurateur — Cachet Laiton Personnalisé</h2>
+  <p style="text-align:center;color:#666;margin-bottom:2rem">Composez votre cachet en temps réel. Un BAT vous sera envoyé sous 6 jours ouvrés avant fabrication.</p>
+
+  <div class="configurateur">
+    <!-- Aperçu -->
+    <div style="text-align:center">
+      <canvas id="cachet-preview"></canvas>
+      <p style="color:#888;font-size:.85rem;margin-top:1rem">Aperçu indicatif — le BAT final confirmera le rendu exact</p>
+    </div>
+
+    <!-- Formulaire -->
+    <div>
+      <div class="form-group">
+        <label>Diamètre du cachet</label>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="diametre" id="diametre" value="25" onchange="document.getElementById('diametre').value='25'">
+            <span>Ø 25 mm — 80,00 €</span>
+          </label>
+          <label>
+            <input type="radio" name="diametre" id="diam30" value="30" checked onchange="document.getElementById('diametre').value='30'">
+            <span>Ø 30 mm — 90,00 €</span>
+          </label>
+        </div>
+        <input type="hidden" id="diametre" value="30">
+      </div>
+
+      <div class="form-group">
+        <label for="texteHaut">Texte ligne du haut</label>
+        <input type="text" id="texteHaut" maxlength="30" placeholder="Ex: MAÎTRE DUPONT HUISSIER">
+      </div>
+
+      <div class="form-group">
+        <label for="texteBas">Texte ligne du bas</label>
+        <input type="text" id="texteBas" maxlength="30" placeholder="Ex: BORDEAUX 2024">
+      </div>
+
+      <div class="form-group">
+        <label for="logoInput">Votre logo (JPG, PNG ou PDF)</label>
+        <input type="file" id="logoInput" accept=".jpg,.jpeg,.png,.pdf">
+        <small style="color:#888">Max 5 Mo — le logo sera centré dans le cachet</small>
+      </div>
+
+      <div class="form-group">
+        <label for="quantite">Quantité</label>
+        <input type="number" id="quantite" min="1" max="100" value="1">
+      </div>
+
+      <div class="form-group">
+        <label>Vos coordonnées</label>
+        <input type="text" id="clientNom" placeholder="Nom / Raison sociale" style="margin-bottom:.5rem">
+        <input type="email" id="clientEmail" placeholder="Email" style="margin-bottom:.5rem">
+        <input type="tel" id="clientTel" placeholder="Téléphone">
+      </div>
+
+      <div class="form-group">
+        <label for="notes">Notes complémentaires</label>
+        <textarea id="notes" rows="3" placeholder="Instructions particulières, référence dossier..."></textarea>
+      </div>
+
+      <button class="btn btn-or" style="width:100%;padding:1rem" onclick="submitConfig()">
+        Commander & recevoir mon BAT sous 6 jours
+      </button>
+      <p style="font-size:.8rem;color:#888;margin-top:.5rem;text-align:center">
+        Paiement sécurisé après validation du BAT
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 Les Scellés Jouve — <a href="/cgv.html">CGV</a> — <a href="/mentions-legales.html">Mentions légales</a></p>
+</footer>
+
+<script src="/js/cart.js"></script>
+<script src="/js/configurateur.js"></script>
+<script>
+// Sync radio -> hidden input pour le canvas
+document.querySelectorAll('input[name="diametre"]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.getElementById('diametre').value = r.value;
+    document.getElementById('diametre').dispatchEvent(new Event('input'));
+  });
+});
+
+async function submitConfig() {
+  const diam = document.querySelector('input[name="diametre"]:checked').value;
+  const prix = diam === '30' ? 90 : 80;
+  const texteHaut = document.getElementById('texteHaut').value.trim();
+  const texteBas = document.getElementById('texteBas').value.trim();
+  const quantite = parseInt(document.getElementById('quantite').value) || 1;
+
+  if (!texteHaut && !texteBas) {
+    alert('Merci de renseigner au moins une ligne de texte pour votre cachet.');
+    return;
+  }
+
+  const btn = event.target;
+  const logoInput = document.getElementById('logoInput');
+  let logoPath = null;
+
+  if (logoInput.files[0]) {
+    btn.disabled = true;
+    btn.textContent = 'Envoi du logo...';
+    try {
+      const fd = new FormData();
+      fd.append('logo', logoInput.files[0]);
+      const res = await fetch('/api/configurateur/upload-logo', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Echec upload');
+      logoPath = data.path;
+    } catch (e) {
+      alert('Erreur lors de l envoi du logo : ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Commander & recevoir mon BAT sous 6 jours';
+      return;
+    }
+  }
+
+  Cart.items.push({
+    id: 'cachet-' + Date.now(),
+    nom: 'Cachet laiton personnalise O' + diam + 'mm',
+    prix: prix,
+    quantite: quantite,
+    image: null,
+    custom: {
+      diametre: diam,
+      texte_haut: texteHaut,
+      texte_bas: texteBas,
+      logo_path: logoPath,
+      notes: document.getElementById('notes').value.trim()
+    }
+  });
+  Cart.save();
+  Cart.updateBadge();
+
+  alert('Votre cachet personnalise a ete ajoute au panier ! Un BAT vous sera envoye sous 6 jours ouvres apres validation de la commande.');
+  window.location = '/panier.html';
+}
+</script>
+</body>
+</html>

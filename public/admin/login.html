@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration — Les Scellés Jouve</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bleu); }
+    .login-box { background: #fff; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); padding: 2.5rem; width: 100%; max-width: 380px; }
+    .login-box h1 { text-align: center; color: var(--bleu); font-size: 1.3rem; margin-bottom: .5rem; }
+    .login-box .sub { text-align: center; color: #999; font-size: .85rem; margin-bottom: 2rem; }
+    .login-box .field { margin-bottom: 1.2rem; }
+    .login-box label { display: block; font-weight: 600; margin-bottom: .4rem; font-size: .85rem; color: var(--bleu); }
+    .login-box input { width: 100%; padding: .7rem 1rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: .95rem; }
+    .login-box input:focus { outline: none; border-color: var(--or); }
+    .error-msg { background: #fdecea; color: #c0392b; padding: .7rem 1rem; border-radius: 8px; font-size: .85rem; margin-bottom: 1rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <img src="/img/logo-jouve.svg" alt="Les Scellés Jouve" style="height:90px;width:auto;display:block;margin:0 auto 1rem"><h1>Administration</h1>
+    <p class="sub">Les Scellés Jouve</p>
+    <div class="error-msg" id="error"></div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="admin@jouve-scelles.fr" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn btn-or" style="width:100%;padding:.8rem" onclick="login()">Se connecter</button>
+  </div>
+
+<script>
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const errorDiv = document.getElementById('error');
+  errorDiv.style.display = 'none';
+
+  if (!email || !password) {
+    errorDiv.textContent = 'Merci de remplir tous les champs.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.location = '/admin/dashboard.html';
+    } else {
+      errorDiv.textContent = data.error || 'Identifiants incorrects.';
+      errorDiv.style.display = 'block';
+    }
+  } catch (e) {
+    errorDiv.textContent = 'Erreur de connexion au serveur.';
+    errorDiv.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>
