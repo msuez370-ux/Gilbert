@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produit — Les Scellés Jouve</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .produit-wrap { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+    .produit-img { background: #f5f5f5; border-radius: 12px; overflow: hidden; border: 1px solid #e1e4e9; }
+    .produit-img img { width: 100%; height: auto; display: block; }
+    .produit-info h1 { font-family: var(--police-titres, 'Georgia'); font-size: 1.9rem; color: var(--bleu); margin-bottom: .5rem; line-height: 1.2; }
+    .produit-cat { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: #999; margin-bottom: 1rem; }
+    .produit-prix { font-size: 2rem; font-weight: 700; color: var(--rouge, #C0392B); margin: 1rem 0; font-family: var(--police-titres, 'Georgia'); }
+    .produit-desc-courte { font-size: 1.05rem; color: #444; line-height: 1.6; margin-bottom: 1.5rem; }
+    .produit-actions { display: flex; gap: 1rem; align-items: center; margin: 1.5rem 0; padding: 1.5rem 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+    .qty-sel { display: flex; align-items: center; gap: .5rem; }
+    .qty-sel button { width: 34px; height: 34px; border: 1px solid #ddd; background: #f5f5f5; border-radius: 6px; cursor: pointer; font-size: 1.1rem; }
+    .qty-sel input { width: 50px; text-align: center; padding: .4rem; border: 1px solid #ddd; border-radius: 6px; }
+    .descriptif { margin-top: 3rem; grid-column: 1 / -1; max-width: 800px; }
+    .descriptif h2 { font-family: var(--police-titres, 'Georgia'); font-size: 1.4rem; color: var(--bleu); margin-bottom: 1.2rem; padding-bottom: .5rem; border-bottom: 2px solid var(--or, #C9A24B); }
+    .descriptif h3 { color: var(--bleu); font-size: 1.05rem; margin: 1.5rem 0 .6rem; }
+    .descriptif p { line-height: 1.75; margin-bottom: 1rem; color: #333; }
+    .descriptif ul, .descriptif ol { margin: .5rem 0 1.2rem 1.5rem; }
+    .descriptif li { margin-bottom: .5rem; line-height: 1.65; }
+    .badge-perso { background: rgba(201,162,75,0.16); border: 1px solid rgba(201,162,75,0.4); color: #8a6a1f; font-size: .75rem; font-weight: 700; text-transform: uppercase; padding: .3rem .8rem; border-radius: 999px; display: inline-block; margin-bottom: 1rem; }
+    .btn-config { background: var(--bleu); color: #fff; }
+    @media (max-width: 820px) { .produit-wrap { grid-template-columns: 1fr; } .produit-img { position: static; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo"><img src="/img/logo-jouve.svg" alt="Les Scellés Jouve" style="height:44px;width:auto"></a>
+  <ul>
+    <li><a href="/#catalogue">Catalogue</a></li>
+    <li><a href="/configurateur.html">Configurateur</a></li>
+    <li><a href="/contact.html">Contact</a></li>
+  </ul>
+  <div class="cart-icon" onclick="window.location='/panier.html'">Panier <span id="cart-badge">0</span></div>
+</nav>
+
+<section class="section">
+  <div class="produit-wrap" id="produit-contenu">
+    <p style="text-align:center;grid-column:1/-1;color:#999">Chargement...</p>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Les Scellés Jouve — <a href="/cgv.html">CGV</a> — <a href="/mentions-legales.html">Mentions légales</a></p>
+</footer>
+
+<script src="/js/cart.js"></script>
+<script>
+function getSlug() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('slug');
+}
+
+async function loadProduit() {
+  const slug = getSlug();
+  const container = document.getElementById('produit-contenu');
+  if (!slug) { container.innerHTML = '<p>Produit introuvable.</p>'; return; }
+
+  try {
+    const p = await fetch('/api/products/' + slug).then(r => r.json());
+    if (p.error) { container.innerHTML = '<p>Produit introuvable.</p>'; return; }
+
+    const prix = Number(p.prix);
+    const estPerso = p.is_personnalisable == 1;
+    document.title = p.nom + ' — Les Scellés Jouve';
+
+    container.innerHTML =
+      '<div class="produit-img"><img src="' + (p.image || '/img/placeholder.png') + '" alt="' + p.nom + '" onerror="this.src=\'/img/placeholder.png\'"></div>' +
+      '<div class="produit-info">' +
+        '<div class="produit-cat">' + (p.categorie || '') + '</div>' +
+        '<h1>' + p.nom + '</h1>' +
+        (estPerso ? '<span class="badge-perso">Personnalisable</span>' : '') +
+        '<div class="produit-prix">' + (prix > 0 ? prix.toFixed(2) + ' € TTC' : 'Sur devis') + '</div>' +
+        '<div class="produit-desc-courte">' + (p.description || '') + '</div>' +
+        '<div class="produit-actions">' +
+          (estPerso
+            ? '<a href="/configurateur.html?diametre=' + (p.slug.includes('25') ? '25' : '30') + '" class="btn btn-config" style="padding:.8rem 1.6rem">Personnaliser ce cachet</a>'
+            : '<div class="qty-sel"><button onclick="changeQty(-1)">−</button><input type="number" id="qty" value="1" min="1"><button onclick="changeQty(1)">+</button></div>' +
+              '<button class="btn btn-or" style="padding:.8rem 1.6rem" onclick="ajouter()">Ajouter au panier</button>'
+          ) +
+        '</div>' +
+      '</div>' +
+      (p.description_longue ? '<div class="descriptif"><h2>Description détaillée</h2>' + p.description_longue + '</div>' : '');
+
+    window._produit = p;
+  } catch (e) {
+    container.innerHTML = '<p style="color:red">Erreur de chargement.</p>';
+  }
+}
+
+function changeQty(d) {
+  const input = document.getElementById('qty');
+  const v = Math.max(1, parseInt(input.value) + d);
+  input.value = v;
+}
+
+function ajouter() {
+  const p = window._produit;
+  const qty = parseInt(document.getElementById('qty').value) || 1;
+  Cart.add({ id: p.id, nom: p.nom, prix: Number(p.prix), image: p.image }, qty);
+  alert('Ajouté au panier !');
+}
+
+loadProduit();
+</script>
+</body>
+</html>

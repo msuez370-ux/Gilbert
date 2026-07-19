@@ -47,12 +47,12 @@
 
       <div class="form-group">
         <label for="texteHaut">Texte ligne du haut</label>
-        <input type="text" id="texteHaut" maxlength="30" placeholder="Ex: MAÎTRE DUPONT HUISSIER">
+        <input type="text" id="texteHaut" maxlength="42" placeholder="Ex: MAÎTRE DUPONT HUISSIER">
       </div>
 
       <div class="form-group">
         <label for="texteBas">Texte ligne du bas</label>
-        <input type="text" id="texteBas" maxlength="30" placeholder="Ex: BORDEAUX 2024">
+        <input type="text" id="texteBas" maxlength="42" placeholder="Ex: BORDEAUX 2024">
       </div>
 
       <div class="form-group">
@@ -95,13 +95,26 @@
 <script src="/js/cart.js"></script>
 <script src="/js/configurateur.js"></script>
 <script>
-// Sync radio -> hidden input pour le canvas
-document.querySelectorAll('input[name="diametre"]').forEach(r => {
+  document.querySelectorAll('input[name="diametre"]').forEach(r => {
   r.addEventListener('change', () => {
     document.getElementById('diametre').value = r.value;
     document.getElementById('diametre').dispatchEvent(new Event('input'));
   });
 });
+// Sync radio -> hidden input pour le canvas
+// Pré-sélection du diamètre depuis l'URL (venant de la page produit)
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const diam = params.get('diametre');
+  if (diam === '25' || diam === '30') {
+    const radio = document.querySelector('input[name="diametre"][value="' + diam + '"]');
+    if (radio) {
+      radio.checked = true;
+      document.getElementById('diametre').value = diam;
+      radio.dispatchEvent(new Event('change'));
+    }
+  }
+})();
 
 async function submitConfig() {
   const diam = document.querySelector('input[name="diametre"]:checked').value;

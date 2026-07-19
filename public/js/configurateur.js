@@ -9,15 +9,32 @@
 
   function drawTextArc(text, radius, isBottom) {
     if (!text) return;
+    const chars = text.split('');
+    const n = chars.length;
+
+    // Angle max occupe par le texte : un peu moins d'un demi-cercle (140°)
+    // pour laisser un espace entre la ligne du haut et celle du bas.
+    const maxArc = Math.PI * 0.78;
+
+    // Taille de police adaptative : plus il y a de lettres, plus c'est petit
+    let fontSize = 15;
+    if (n > 18) fontSize = 13;
+    if (n > 26) fontSize = 11;
+    if (n > 34) fontSize = 10;
+
     ctx.save();
-    ctx.font = 'bold 15px Georgia, serif';
+    ctx.font = 'bold ' + fontSize + 'px Georgia, serif';
     ctx.fillStyle = '#1a1a2e';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const chars = text.toUpperCase().split('');
-    const anglePerChar = 0.17;
-    const totalAngle = anglePerChar * (chars.length - 1);
+
+    // Espacement ideal selon la police, mais borne pour ne jamais depasser maxArc
+    const idealStep = (fontSize + 3) / radius;
+    const maxStep = n > 1 ? maxArc / (n - 1) : 0;
+    const anglePerChar = Math.min(idealStep, maxStep);
+    const totalAngle = anglePerChar * (n - 1);
     const cx = SIZE / 2, cy = SIZE / 2;
+
     chars.forEach((char, i) => {
       let angle;
       if (isBottom) {

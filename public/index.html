@@ -50,17 +50,17 @@ async function loadProducts() {
     if (!products.length) { grid.innerHTML = '<p>Aucun produit disponible.</p>'; return; }
     grid.innerHTML = products.map(p => `
       <div class="card">
-        <img src="${p.image || '/img/placeholder.png'}" alt="${p.nom}" onerror="this.src='/img/placeholder.png'">
+        <img src="${p.image || '/img/placeholder.png'}" alt="${p.nom}" onerror="this.src='/img/placeholder.png'" style="cursor:pointer" onclick="window.location='/produit.html?slug=${p.slug}'">
         <div class="card-body">
-          <h3>${p.nom}</h3>
+          <h3 style="cursor:pointer" onclick="window.location='/produit.html?slug=${p.slug}'">${p.nom}</h3>
           <p>${(p.description || '').substring(0, 100)}...</p>
         </div>
         <div class="card-footer">
           <span class="prix">${Number(p.prix) > 0 ? Number(p.prix).toFixed(2) + ' €' : 'Sur devis'}</span>
           ${p.is_personnalisable ? '<span class="badge-perso">Personnalisable</span>' : ''}
           <button class="btn btn-or" style="padding:.4rem 1rem;font-size:.85rem"
-            onclick="${p.is_personnalisable ? "window.location='/configurateur.html'" : `Cart.add({id:${p.id},nom:'${p.nom.replace(/'/g,"\\'")}',prix:${p.prix}});alert('Ajouté au panier !')`}">
-            ${p.is_personnalisable ? 'Configurer' : 'Ajouter'}
+            onclick="window.location='/produit.html?slug=${p.slug}'">
+            Voir
           </button>
         </div>
       </div>
