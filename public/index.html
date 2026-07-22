@@ -49,7 +49,8 @@ async function loadProducts() {
     const products = await res.json();
     if (!products.length) { grid.innerHTML = '<p>Aucun produit disponible.</p>'; return; }
     grid.innerHTML = products.map(p => `
-      <div class="card">
+      <div class="card" style="position:relative">
+        ${p.is_personnalisable ? '<span class="badge-perso" style="position:absolute;top:10px;left:10px;z-index:2">Personnalisable</span>' : ''}
         <img src="${p.image || '/img/placeholder.png'}" alt="${p.nom}" onerror="this.src='/img/placeholder.png'" style="cursor:pointer" onclick="window.location='/produit.html?slug=${p.slug}'">
         <div class="card-body">
           <h3 style="cursor:pointer" onclick="window.location='/produit.html?slug=${p.slug}'">${p.nom}</h3>
@@ -57,7 +58,6 @@ async function loadProducts() {
         </div>
         <div class="card-footer">
           <span class="prix">${Number(p.prix) > 0 ? Number(p.prix).toFixed(2) + ' €' : 'Sur devis'}</span>
-          ${p.is_personnalisable ? '<span class="badge-perso">Personnalisable</span>' : ''}
           <button class="btn btn-or" style="padding:.4rem 1rem;font-size:.85rem"
             onclick="window.location='/produit.html?slug=${p.slug}'">
             Voir
