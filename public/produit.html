@@ -68,6 +68,13 @@ async function loadProduit() {
 
     const prix = Number(p.prix);
     const estPerso = p.is_personnalisable == 1;
+    const slugsProcess = ['sceau-laiton-30mm','sceau-laiton-25mm','sceau-marianne-30mm','sceau-marianne-25mm','sceau-funeraire-30mm','sceau-funeraire-25mm','scelles-flash-tube','pack-scelles-flash-complet','scelles-flash-5-tubes'];
+    const blocProcess = slugsProcess.includes(p.slug)
+      ? '<div style="grid-column:1/-1;margin-top:2rem;padding:1.5rem;background:#fafafa;border:1px solid #e1e4e9;border-radius:10px">' +
+        '<h2 style="font-size:1.15rem;color:var(--bleu);margin-bottom:1rem;text-align:center">Un scellé parfait en 3 étapes</h2>' +
+        '<img src="/img/produits/process-scelles-flash.jpg" alt="Process Scellés Flash en 3 étapes" style="width:100%;height:auto;display:block;border-radius:6px">' +
+        '</div>'
+      : '';
     document.title = p.nom + ' — Les Scellés Jouve';
 
     container.innerHTML =
@@ -86,6 +93,7 @@ async function loadProduit() {
           ) +
         '</div>' +
       '</div>' +
+      blocProcess +
       (p.description_longue ? '<div class="descriptif"><h2>Description détaillée</h2>' + p.description_longue + '</div>' : '');
 
     window._produit = p;
