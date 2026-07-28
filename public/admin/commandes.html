@@ -89,12 +89,12 @@ async function loadCommandes() {
     }
     body.innerHTML = cmd.map(c => `
       <tr>
-        <td><strong>${c.reference}</strong></td>
-        <td>${c.client_nom}</td>
-        <td>${c.client_email}</td>
-        <td>${Number(c.total).toFixed(2)} €</td>
-        <td><span class="statut s-attente">${c.statut}</span></td>
-        <td>${new Date(c.created_at).toLocaleDateString('fr-FR')}</td>
+        <td data-label="Référence"><strong>${c.reference}</strong></td>
+        <td data-label="Client">${c.client_nom}</td>
+        <td data-label="Email">${c.client_email}</td>
+        <td data-label="Total">${Number(c.total).toFixed(2)} €</td>
+        <td data-label="Statut"><span class="statut s-attente">${c.statut}</span></td>
+        <td data-label="Date">${new Date(c.created_at).toLocaleDateString('fr-FR')}</td>
       </tr>`).join('');
   } catch(e) {
     document.getElementById('commandes-empty').style.display = 'block';
@@ -111,14 +111,14 @@ async function loadCachets() {
     }
     body.innerHTML = cachets.map(c => `
       <tr>
-        <td>${c.reference || '—'}</td>
-        <td>${c.client_nom || '—'}</td>
-        <td>${c.diametre}mm</td>
-        <td>${c.texte_haut || '—'}</td>
-        <td>${c.texte_bas || '—'}</td>
-        <td>${c.quantite}</td>
-        <td>${c.logo_path ? '<a href="' + c.logo_path + '" target="_blank">Voir</a>' : '—'}</td>
-        <td>
+        <td data-label="Réf. commande">${c.reference || '—'}</td>
+        <td data-label="Client">${c.client_nom || '—'}</td>
+        <td data-label="Diamètre">${c.diametre}mm</td>
+        <td data-label="Ligne haut">${c.texte_haut || '—'}</td>
+        <td data-label="Ligne bas">${c.texte_bas || '—'}</td>
+        <td data-label="Quantité">${c.quantite}</td>
+        <td data-label="Logo">${c.logo_path ? '<a href="' + c.logo_path + '" target="_blank">Voir</a>' : '—'}</td>
+        <td data-label="Statut BAT">
           <select class="bat-select" onchange="updateBat(${c.id}, this.value)">
             <option value="en_attente" ${c.statut_bat==='en_attente'?'selected':''}>En attente</option>
             <option value="envoye" ${c.statut_bat==='envoye'?'selected':''}>BAT envoyé</option>

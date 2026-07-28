@@ -97,12 +97,12 @@ async function loadProduits() {
     const prix = Number(p.prix);
     return `
       <tr>
-        <td>${p.nom}</td>
-        <td>${p.categorie || '—'}</td>
-        <td class="prix-cell">${prix > 0 ? prix.toFixed(2) + ' €' : '<span class="devis-tag">Sur devis</span>'}</td>
-        <td>${p.stock}</td>
-        <td>${p.is_active ? '✅' : '❌'}</td>
-        <td><button class="btn-edit" onclick="openModal(${p.id})">Modifier</button></td>
+        <td data-label="Produit">${p.nom}</td>
+        <td data-label="Catégorie">${p.categorie || '—'}</td>
+        <td class="prix-cell" data-label="Prix">${prix > 0 ? prix.toFixed(2) + ' €' : '<span class="devis-tag">Sur devis</span>'}</td>
+        <td data-label="Stock">${p.stock}</td>
+        <td data-label="Actif">${p.is_active ? '✅' : '❌'}</td>
+        <td data-label="Action"><button class="btn-edit" onclick="openModal(${p.id})">Modifier</button></td>
       </tr>`;
   }).join('');
 }
