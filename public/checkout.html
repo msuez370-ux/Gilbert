@@ -7,6 +7,13 @@
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .checkout-wrap { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 380px; gap: 2rem; align-items: start; }
+    @media (max-width: 768px) {
+      .checkout-wrap { grid-template-columns: 1fr; gap: 1.5rem; }
+      .checkout-form { padding: 1.2rem; }
+      .recap { position: static; }
+      .field-row { grid-template-columns: 1fr; gap: 0; }
+      .pay-methods { flex-direction: column; gap: .6rem; }
+    }
     .checkout-form { background: #fff; border-radius: 12px; box-shadow: var(--shadow); padding: 2rem; }
     .checkout-form h3 { color: var(--bleu); margin-bottom: 1rem; font-size: 1.1rem; }
     .field { margin-bottom: 1rem; }

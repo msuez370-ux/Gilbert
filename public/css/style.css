@@ -67,3 +67,87 @@ footer a { color: var(--or); text-decoration: none; }
   nav ul { display: none; }
   .hero h1 { font-size: 1.8rem; }
 }
+
+/* ===== Menu mobile (burger) ===== */
+.burger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  flex-direction: column;
+  gap: 5px;
+  margin-left: auto;
+  margin-right: 1rem;
+}
+.burger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--marine, #1B2A44);
+  transition: transform .25s, opacity .25s;
+}
+.burger.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger.active span:nth-child(2) { opacity: 0; }
+.burger.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 768px) {
+  .burger { display: flex; }
+  nav ul {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    flex-direction: column;
+    gap: 0;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--ligne, #E1E4E9);
+    box-shadow: 0 6px 18px rgba(27,42,68,.10);
+  }
+  nav ul.open { display: flex; }
+  nav ul li { width: 100%; }
+  nav ul a {
+    display: block;
+    padding: .95rem 1.5rem;
+    border-bottom: 1px solid #f2f3f5;
+  }
+  nav ul li:last-child a { border-bottom: none; }
+}
+
+/* Renfort visibilite menu mobile */
+@media (max-width: 768px) {
+  .burger {
+    background: var(--marine, #1B2A44);
+    border-radius: 6px;
+    padding: 10px 9px;
+    gap: 4px;
+  }
+  .burger span {
+    background: var(--or, #C9A24B);
+    width: 22px;
+    height: 2.5px;
+  }
+  nav ul {
+    background: var(--marine, #1B2A44);
+    border-top: 2px solid var(--or, #C9A24B);
+    padding: .3rem 0;
+  }
+  nav ul a {
+    color: #fff !important;
+    font-size: 1rem;
+    padding: 1.05rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+  }
+  nav ul a:active { background: rgba(255,255,255,.08); }
+}
+
+/* Empeche tout debordement horizontal */
+html, body { overflow-x: hidden; max-width: 100%; }
+img, canvas, table { max-width: 100%; }
+
+@media (max-width: 768px) {
+  .section { padding: 2.5rem 1rem; }
+  .panier-wrap, .checkout-wrap, .produit-wrap, .contact-wrap, .admin-wrap { padding-left: 0; padding-right: 0; }
+}

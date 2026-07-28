@@ -7,7 +7,27 @@
   <link rel="stylesheet" href="/css/style.css">
   <style>
     .panier-wrap { max-width: 900px; margin: 0 auto; }
-    .panier-item { display: grid; grid-template-columns: 80px 1fr auto auto auto; gap: 1rem; align-items: center; padding: 1rem; background: #fff; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 1rem; }
+ @media (max-width: 768px) {
+      .panier-item {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .8rem;
+        padding: 1rem;
+      }
+      .panier-item img { width: 100%; height: 180px; object-fit: contain; background: #fafafa; }
+      .panier-item .nom { font-size: 1rem; }
+      .qty-control { justify-content: flex-start; }
+      .item-total {
+        text-align: left;
+        font-size: 1.25rem;
+        min-width: 0;
+        padding-top: .4rem;
+        border-top: 1px solid #f0f0f0;
+      }
+      .btn-remove { align-self: flex-start; padding: 0; }
+      .panier-wrap { padding: 0; }
+    }
     .panier-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; }
     .panier-item .nom { font-weight: 600; color: var(--bleu); font-size: .95rem; }
     .panier-item .meta { font-size: .8rem; color: #888; margin-top: .25rem; }
@@ -71,7 +91,7 @@ function renderPanier() {
     }
     return `
       <div class="panier-item">
-        <img src="${item.image || '/img/placeholder.png'}" onerror="this.src='/img/placeholder.png'" alt="${item.nom}">
+        <img src="${item.image || '/img/placeholder.png'}" onerror="this.onerror=null;this.src='/img/placeholder.png'" alt="${item.nom}">
         <div>
           <div class="nom">${item.nom} ${isDevis ? '<span class="badge-devis">Sur devis</span>' : ''}</div>
           ${metaInfo}

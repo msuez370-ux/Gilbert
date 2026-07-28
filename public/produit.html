@@ -78,7 +78,7 @@ async function loadProduit() {
     document.title = p.nom + ' — Les Scellés Jouve';
 
     container.innerHTML =
-      '<div class="produit-img"><img src="' + (p.image || '/img/placeholder.png') + '" alt="' + p.nom + '" onerror="this.src=\'/img/placeholder.png\'"></div>' +
+      '<div class="produit-img"><img src="' + (p.image || '/img/placeholder.png') + '" alt="' + p.nom + '" onerror="this.onerror=null;this.src=\'/img/placeholder.png\'"></div>' +
       '<div class="produit-info">' +
         '<div class="produit-cat">' + (p.categorie || '') + '</div>' +
         '<h1>' + p.nom + '</h1>' +

@@ -51,7 +51,7 @@ async function loadProducts() {
     grid.innerHTML = products.map(p => `
       <div class="card" style="position:relative">
         ${p.is_personnalisable ? '<span class="badge-perso" style="position:absolute;top:10px;left:10px;z-index:2">Personnalisable</span>' : ''}
-        <img src="${p.image || '/img/placeholder.png'}" alt="${p.nom}" onerror="this.src='/img/placeholder.png'" style="cursor:pointer" onclick="window.location='/produit.html?slug=${p.slug}'">
+        <img src="${p.image || '/img/placeholder.png'}" alt="${p.nom}" onerror="this.onerror=null;this.src='/img/placeholder.png'" style="cursor:pointer" onclick="window.location='/produit.html?slug=${p.slug}'">
         <div class="card-body">
           <h3 style="cursor:pointer" onclick="window.location='/produit.html?slug=${p.slug}'">${p.nom}</h3>
           <p>${(p.description || '').substring(0, 100)}...</p>
