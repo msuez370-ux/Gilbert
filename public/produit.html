@@ -97,6 +97,30 @@ async function loadProduit() {
       blocProcess +
       (p.description_longue ? '<div class="descriptif"><h2>Description détaillée</h2>' + p.description_longue + '</div>' : '');
 
+    // Donnees structurees pour Google
+    try {
+      const ld = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": p.nom,
+        "description": (p.description || "").replace(/<[^>]*>/g, "").slice(0, 300),
+        "brand": { "@type": "Brand", "name": "Les Scellés Jouve" },
+        "offers": {
+          "@type": "Offer",
+          "url": window.location.href,
+          "priceCurrency": "EUR",
+          "price": prix.toFixed(2),
+          "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
+          "seller": { "@type": "Organization", "name": "Sté Jouve" }
+        }
+      };
+      if (p.image) ld.image = window.location.origin + p.image;
+      const s = document.createElement("script");
+      s.type = "application/ld+json";
+      s.textContent = JSON.stringify(ld);
+      document.head.appendChild(s);
+    } catch (e) {}
+
     window._produit = p;
   } catch (e) {
     container.innerHTML = '<p style="color:red">Erreur de chargement.</p>';

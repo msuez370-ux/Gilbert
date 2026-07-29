@@ -28,6 +28,28 @@ app.use(session({
 }));
 
 // Fichiers statiques
+// Sitemap genere dynamiquement depuis la base
+app.get("/sitemap.xml", async (req, res) => {
+  try {
+    const db = require("./src/config/db");
+    const base = process.env.SITE_URL || (req.protocol + "://" + req.get("host"));
+    const [produits] = await db.query("SELECT slug FROM products WHERE is_active = 1");
+    const statiques = ["", "configurateur.html", "contact.html", "cgv.html", "mentions-legales.html"];
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    statiques.forEach(p => {
+      xml += "<url><loc>" + base + "/" + p + "</loc><changefreq>monthly</changefreq><priority>" + (p === "" ? "1.0" : "0.7") + "</priority></url>";
+    });
+    produits.forEach(p => {
+      xml += "<url><loc>" + base + "/produit.html?slug=" + p.slug + "</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>";
+    });
+    xml += "</urlset>";
+    res.set("Content-Type", "application/xml").send(xml);
+  } catch (e) {
+    res.status(500).send("Erreur sitemap");
+  }
+});
+
 // Sert les fichiers stockes en base (persistants aux redeploiements)
 app.get("/uploads/:nom", async (req, res, next) => {
   try {

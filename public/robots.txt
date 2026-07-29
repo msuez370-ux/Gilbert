@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /uploads/
+Disallow: /checkout.html
+Disallow: /panier.html
+
+Sitemap: https://gilbert-production-a768.up.railway.app/sitemap.xml
