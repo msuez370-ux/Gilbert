@@ -28,7 +28,21 @@ app.use(session({
 }));
 
 // Fichiers statiques
-app.use(express.static(path.join(__dirname, 'public')));
+// Sert les fichiers stockes en base (persistants aux redeploiements)
+app.get("/uploads/:nom", async (req, res, next) => {
+  try {
+    const db = require("./src/config/db");
+    const [rows] = await db.query("SELECT contenu, type_mime FROM fichiers WHERE nom = ?", [req.params.nom]);
+    if (!rows.length) return next();
+    res.set("Content-Type", rows[0].type_mime);
+    res.set("Cache-Control", "public, max-age=31536000");
+    return res.send(rows[0].contenu);
+  } catch (e) {
+    return next();
+  }
+});
+
+app.use(express.static(path.join(__dirname, "public")));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // API Routes
