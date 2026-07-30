@@ -170,10 +170,25 @@ async function validerCommande() {
       const res = await fetch('/api/payment/stripe/intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: total })
+        body: JSON.stringify({
+          items: Cart.items.map(i => ({
+            product_id: i.custom ? null : i.id,
+            quantite: i.quantite,
+            custom: i.custom ? true : false,
+            diametre: i.custom ? i.custom.diametre : null
+          }))
+        })
       });
-      const { clientSecret, error } = await res.json();
+    const { clientSecret, error, total: totalServeur } = await res.json();
       if (error) throw new Error(error);
+
+      if (Math.abs(Number(totalServeur) - total) > 0.01) {
+        document.getElementById('card-error').textContent =
+          'Le montant a changé (' + Number(totalServeur).toFixed(2) + ' EUR). Rechargez la page avant de payer.';
+        btn.disabled = false;
+        btn.textContent = 'Valider et payer';
+        return;
+      }
 
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: { card: cardElement, billing_details: { name: nom, email: email } }

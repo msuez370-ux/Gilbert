@@ -14,8 +14,23 @@ exports.create = async (req, res) => {
     const produits = items.filter(i => !i.custom);
     const cachets = items.filter(i => i.custom);
 
-   const sousTotal = items.reduce((sum, i) => sum + Number(i.prix_unitaire) * i.quantite, 0);
-    const total = sousTotal + (Number(frais_port) || 0);
+    // Prix verifies en base : on ignore ce que le client annonce
+    let sousTotal = 0;
+    for (const item of items) {
+      const q = parseInt(item.quantite, 10);
+      if (!Number.isInteger(q) || q < 1 || q > 999) throw new Error("Quantite invalide");
+      if (item.custom) {
+        const prixCachet = String(item.custom.diametre) === "25" ? 80 : 90;
+        item.prix_unitaire = prixCachet;
+        sousTotal += prixCachet * q;
+      } else {
+        const [p] = await conn.query("SELECT prix FROM products WHERE id = ? AND is_active = 1", [item.product_id]);
+        if (!p.length) throw new Error("Produit indisponible");
+        item.prix_unitaire = Number(p[0].prix);
+        sousTotal += item.prix_unitaire * q;
+      }
+    }
+    const total = sousTotal + 15;
     const ref = generateRef();
 
     const [order] = await conn.query(

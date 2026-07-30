@@ -10,9 +10,22 @@ const path = require('path');
 const app = express();
 
 // Sécurité
+// Railway place l app derriere un proxy : indispensable pour les cookies secure
+app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.NODE_ENV === 'production' ? 'https://votredomaine.fr' : '*' }));
-if (process.env.NODE_ENV === 'production') {
+// Protection contre la force brute sur la connexion admin (actif en dev ET en prod)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Trop de tentatives. Reessayez dans 15 minutes." }
+});
+app.use("/api/admin/login", loginLimiter);
+
+if (process.env.NODE_ENV === "production") {
   app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500 }));
 }
 
@@ -24,7 +37,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'dev_secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 86400000 }
+  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, sameSite: 'strict', maxAge: 86400000 }
 }));
 
 // Fichiers statiques
