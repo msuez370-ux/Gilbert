@@ -21,7 +21,29 @@ exports.getAll = async (req, res) => {
 
 exports.updateBat = async (req, res) => {
   try {
-    await db.query('UPDATE custom_orders SET statut_bat = ? WHERE id = ?', [req.body.statut_bat, req.params.id]);
+    const statut = req.body.statut_bat;
+    await db.query("UPDATE custom_orders SET statut_bat = ? WHERE id = ?", [statut, req.params.id]);
+
+    // Previent le client quand son BAT est envoye
+    if (statut === "envoye") {
+      try {
+        const [rows] = await db.query(
+          "SELECT o.reference, o.client_nom, o.client_email FROM custom_orders c JOIN orders o ON o.id = c.order_id WHERE c.id = ?",
+          [req.params.id]
+        );
+        if (rows.length && rows[0].client_email) {
+          const { sendBatNotification } = require("../services/emailService");
+          await sendBatNotification({
+            email: rows[0].client_email,
+            nom: rows[0].client_nom,
+            reference: rows[0].reference
+          });
+        }
+      } catch (mailErr) {
+        console.log("Email BAT non envoye :", mailErr.message);
+      }
+    }
+
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 };

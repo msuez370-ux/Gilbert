@@ -26,3 +26,32 @@ exports.sendBatNotification = async ({ email, nom, reference }) => {
     html: '<h2>Votre BAT est prêt, ' + nom + '</h2><p>Votre Bon à Tirer pour la commande <strong>' + reference + '</strong> est disponible. Merci de le valider pour lancer la fabrication.</p>'
   });
 };
+
+// Alerte Gilbert qu'une commande de cachet personnalise est arrivee
+exports.sendNouvelleCommandeCachet = async ({ reference, client_nom, client_email, cachets }) => {
+  const destinataire = process.env.CONTACT_EMAIL || 'societejouve13@gmail.com';
+
+  const lignes = cachets.map(c =>
+    '<li style="margin-bottom:10px">' +
+    '<strong>Cachet &Oslash; ' + c.diametre + ' mm</strong> &mdash; quantit&eacute; : ' + c.quantite + '<br>' +
+    'Ligne du haut : ' + (c.texte_haut || '&mdash;') + '<br>' +
+    'Ligne du bas : ' + (c.texte_bas || '&mdash;') + '<br>' +
+    'Logo : ' + (c.logo_path ? 'fourni par le client' : 'aucun') +
+    (c.notes_client ? '<br>Notes : ' + c.notes_client : '') +
+    '</li>'
+  ).join('');
+
+  await transporter.sendMail({
+    from: '"Site Les Scelles Jouve" <' + process.env.SMTP_USER + '>',
+    to: destinataire,
+    subject: 'Nouvelle commande de cachet a graver — ' + reference,
+    html:
+      '<h2>Nouvelle commande de cachet personnalis&eacute;</h2>' +
+      '<p><strong>R&eacute;f&eacute;rence :</strong> ' + reference + '</p>' +
+      '<p><strong>Client :</strong> ' + client_nom + ' (' + client_email + ')</p>' +
+      '<h3>Cachet(s) &agrave; graver</h3>' +
+      '<ul>' + lignes + '</ul>' +
+      '<p>Connectez-vous &agrave; votre espace de gestion pour consulter le logo et pr&eacute;parer le BAT.</p>' +
+      '<p style="color:#888;font-size:13px">D&eacute;lai annonc&eacute; au client : 6 jours ouvr&eacute;s.</p>'
+  });
+};

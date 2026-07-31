@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const { sendOrderConfirmation } = require('../services/emailService');
+const { sendOrderConfirmation, sendNouvelleCommandeCachet } = require('../services/emailService');
 
 function generateRef() {
   return 'JV-' + Date.now().toString(36).toUpperCase();
@@ -59,6 +59,21 @@ exports.create = async (req, res) => {
 
     try {
       await sendOrderConfirmation({ reference: ref, email: client.email, nom: client.nom, items, total });
+      if (cachets.length) {
+        await sendNouvelleCommandeCachet({
+          reference: ref,
+          client_nom: client.nom,
+          client_email: client.email,
+          cachets: cachets.map(c => ({
+            diametre: c.custom.diametre,
+            quantite: c.quantite,
+            texte_haut: c.custom.texte_haut,
+            texte_bas: c.custom.texte_bas,
+            logo_path: c.custom.logo_path,
+            notes_client: c.custom.notes
+          }))
+        });
+      }
     } catch (mailErr) {
       console.log('Email non envoye (SMTP non configure) :', mailErr.message);
     }

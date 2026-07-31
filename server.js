@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -13,7 +12,13 @@ const app = express();
 // Railway place l app derriere un proxy : indispensable pour les cookies secure
 app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({ origin: process.env.NODE_ENV === 'production' ? 'https://votredomaine.fr' : '*' }));
+// Origines autorisees : configurables sans toucher au code
+const originsAutorisees = (process.env.CORS_ORIGINS || "https://gilbert-production-a768.up.railway.app")
+  .split(",").map(o => o.trim()).filter(Boolean);
+app.use(cors({
+  origin: process.env.NODE_ENV === "production" ? originsAutorisees : true,
+  credentials: true
+}));
 // Protection contre la force brute sur la connexion admin (actif en dev ET en prod)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -33,12 +38,6 @@ if (process.env.NODE_ENV === "production") {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev_secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, sameSite: 'strict', maxAge: 86400000 }
-}));
 
 // Fichiers statiques
 // Sitemap genere dynamiquement depuis la base
