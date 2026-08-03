@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journal d'activité — Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .admin-nav { background: var(--bleu); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .admin-nav .logo { color: var(--or); font-weight: 700; }
+    .admin-nav a { color: #ccc; text-decoration: none; margin-left: 1.5rem; font-size: .9rem; }
+    .admin-nav a:hover { color: var(--or); }
+    .admin-wrap { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+    h1 { color: var(--bleu); font-size: 1.4rem; margin-bottom: .4rem; }
+    .sous-titre { color: #666; font-size: .88rem; margin-bottom: 1.5rem; }
+    .filtres { display: flex; gap: .5rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+    .filtre { padding: .4rem 1rem; border: 1px solid #ddd; background: #fff; border-radius: 20px; cursor: pointer; font-size: .85rem; }
+    .filtre.actif { background: var(--bleu); color: #fff; border-color: var(--bleu); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(27,42,68,.06); }
+    th { background: var(--bleu); color: #fff; padding: .8rem 1rem; text-align: left; font-size: .82rem; }
+    td { padding: .7rem 1rem; border-bottom: 1px solid #f2f3f5; font-size: .88rem; }
+    tr:last-child td { border-bottom: none; }
+    .tag { font-size: .72rem; font-weight: 700; padding: .2rem .6rem; border-radius: 20px; text-transform: uppercase; }
+    .t-login_reussi { background: #d4edda; color: #155724; }
+    .t-login_echec { background: #fdecea; color: #c0392b; }
+    .t-commande { background: rgba(201,162,75,.2); color: #8a6a1f; }
+    .vide { text-align: center; padding: 3rem; color: #999; }
+  </style>
+</head>
+<body>
+
+<div class="admin-nav">
+  <span class="logo" style="display:flex;align-items:center;gap:10px"><img src="/img/logo-jouve.svg" alt="Jouve" style="height:40px;width:auto;background:#fff;border-radius:50%;padding:2px"> Admin</span>
+  <div>
+    <a href="/admin/dashboard.html">Tableau de bord</a>
+    <a href="/admin/produits.html">Produits</a>
+    <a href="/admin/commandes.html">Commandes</a>
+    <a href="/admin/journal.html">Journal</a>
+    <a href="/">Voir le site</a>
+    <a href="#" onclick="logout()">Déconnexion</a>
+  </div>
+</div>
+
+<div class="admin-wrap">
+  <h1>Journal d'activité</h1>
+  <p class="sous-titre">Les 200 derniers événements enregistrés sur le site.</p>
+
+  <div class="filtres">
+    <button class="filtre actif" onclick="filtrer('tous', this)">Tout</button>
+    <button class="filtre" onclick="filtrer('commande', this)">Commandes</button>
+    <button class="filtre" onclick="filtrer('login_reussi', this)">Connexions</button>
+    <button class="filtre" onclick="filtrer('login_echec', this)">Tentatives échouées</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Type</th><th>Détail</th><th>Email</th><th>Référence</th></tr>
+    </thead>
+    <tbody id="corps">
+      <tr><td colspan="5" class="vide">Chargement...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+let evenements = [];
+let filtreActif = 'tous';
+
+const libelles = {
+  login_reussi: 'Connexion',
+  login_echec: 'Échec',
+  commande: 'Commande'
+};
+
+async function charger() {
+  try {
+    const res = await fetch('/api/admin/journal');
+    if (res.status === 401) { window.location = '/admin/login.html'; return; }
+    evenements = await res.json();
+    afficher();
+  } catch (e) {
+    document.getElementById('corps').innerHTML = '<tr><td colspan="5" class="vide">Journal indisponible.</td></tr>';
+  }
+}
+
+function afficher() {
+  const liste = filtreActif === 'tous' ? evenements : evenements.filter(e => e.type === filtreActif);
+  const corps = document.getElementById('corps');
+
+  if (!liste.length) {
+    corps.innerHTML = '<tr><td colspan="5" class="vide">Aucun événement.</td></tr>';
+    return;
+  }
+
+  corps.innerHTML = liste.map(e => {
+    const d = new Date(e.created_at);
+    const date = d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    return '<tr>' +
+      '<td data-label="Date">' + date + '</td>' +
+      '<td data-label="Type"><span class="tag t-' + e.type + '">' + (libelles[e.type] || e.type) + '</span></td>' +
+      '<td data-label="Détail">' + (e.message || '—') + '</td>' +
+      '<td data-label="Email">' + (e.email || '—') + '</td>' +
+      '<td data-label="Référence">' + (e.reference || '—') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function filtrer(type, bouton) {
+  filtreActif = type;
+  document.querySelectorAll('.filtre').forEach(b => b.classList.remove('actif'));
+  bouton.classList.add('actif');
+  afficher();
+}
+
+async function logout() {
+  await fetch('/api/admin/logout', { method: 'POST' });
+  window.location = '/admin/login.html';
+}
+
+charger();
+</script>
+</body>
+</html>

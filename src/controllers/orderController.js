@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { sendOrderConfirmation, sendNouvelleCommandeCachet } = require('../services/emailService');
+const { tracer, adresseIp } = require('../services/journalService');
 
 function generateRef() {
   return 'JV-' + Date.now().toString(36).toUpperCase();
@@ -55,6 +56,7 @@ exports.create = async (req, res) => {
     }
 
     await conn.commit();
+    await tracer({ type: 'commande', message: total.toFixed(2) + ' EUR - ' + items.length + ' article(s)', email: client.email, ip: adresseIp(req), reference: ref });
     conn.release();
 
     try {

@@ -127,6 +127,37 @@ app.get('*', (req, res) => {
 
 // Démarrage
 const PORT = process.env.PORT || 3000;
+// Cree les tables techniques si elles n existent pas encore
+async function initialiserTables() {
+  try {
+    const db = require("./src/config/db");
+    await db.query(`CREATE TABLE IF NOT EXISTS journal (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      type VARCHAR(50) NOT NULL,
+      message VARCHAR(500),
+      email VARCHAR(255),
+      ip VARCHAR(45),
+      reference VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_type (type),
+      INDEX idx_date (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+    await db.query(`CREATE TABLE IF NOT EXISTS fichiers (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nom VARCHAR(255) NOT NULL UNIQUE,
+      type_mime VARCHAR(100) NOT NULL,
+      taille INT NOT NULL,
+      contenu LONGBLOB NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_nom (nom)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+    console.log("Tables techniques verifiees");
+  } catch (e) {
+    console.log("Init tables :", e.message);
+  }
+}
+initialiserTables();
+
 app.listen(PORT, () => {
   console.log(`Serveur Les Scellés Jouve démarré sur http://localhost:${PORT}`);
 });
