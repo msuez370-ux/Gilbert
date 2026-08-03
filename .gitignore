@@ -4,3 +4,10 @@ public/uploads/*
 !public/uploads/.gitkeep
 *.log
 .DS_Store
+
+# Fichiers de sauvegarde
+*.bak
+*.bak[0-9]
+*.backup
+*.backup[0-9]
+structure.txt
