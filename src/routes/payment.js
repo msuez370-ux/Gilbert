@@ -60,4 +60,9 @@ router.post('/stripe/intent', async (req, res) => {
   }
 });
 
+// Expose la cle publique Stripe : un seul endroit a modifier en production
+router.get("/config", (req, res) => {
+  res.json({ publicKey: process.env.STRIPE_PUBLIC_KEY || "" });
+});
+
 module.exports = router;

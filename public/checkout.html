@@ -101,7 +101,15 @@
 <script src="https://js.stripe.com/v3/"></script>
 <script src="/js/cart.js"></script>
 <script>
-const stripe = Stripe("pk_test_51TrYJXHwYqDBsg3Ix847eGmNpcPoqJ9ZwaBrozldOzbwx0tWcL5fgYK5BPBPQdLnjkuQxRaLSVwIKJfzIE2OC79W00Bd4CSovi");
+let stripe = null;
+async function initStripe() {
+  if (stripe) return stripe;
+  const r = await fetch("/api/payment/config");
+  const d = await r.json();
+  if (!d.publicKey) throw new Error("Configuration de paiement indisponible");
+  stripe = Stripe(d.publicKey);
+  return stripe;
+}
 let cardElement = null;
 
 function renderRecap() {
@@ -123,7 +131,8 @@ function renderRecap() {
     : '';
 }
 
-function initCard() {
+async function initCard() {
+  await initStripe();
   const elements = stripe.elements();
   cardElement = elements.create('card', { hidePostalCode: false });
   cardElement.mount('#card-element');
@@ -168,6 +177,7 @@ async function validerCommande() {
     btn.disabled = true;
     btn.textContent = 'Paiement en cours...';
     try {
+      await initStripe();
       const res = await fetch('/api/payment/stripe/intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
