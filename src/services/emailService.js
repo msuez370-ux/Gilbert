@@ -1,20 +1,39 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT) || 587,
   secure: Number(process.env.SMTP_PORT) === 465,
   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000
+  connectionTimeout: 15000
 });
+
+const EXPEDITEUR = process.env.MAIL_FROM || "Les Scelles Jouve <contact@stejouve.fr>";
+
+// Envoie via Resend si une cle API est presente, sinon via SMTP.
+// Railway bloque les ports SMTP : en production, Resend est indispensable.
+async function envoyer({ to, subject, html, replyTo }) {
+  if (process.env.RESEND_API_KEY) {
+    const { Resend } = require("resend");
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { error } = await resend.emails.send({
+      from: EXPEDITEUR,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      replyTo: replyTo || undefined
+    });
+    if (error) throw new Error(error.message || "Echec Resend");
+    return;
+  }
+  await transporter.sendMail({ from: EXPEDITEUR, to, subject, html, replyTo });
+}
 
 exports.sendOrderConfirmation = async ({ reference, email, nom, items, total }) => {
   const lignes = items.map(i =>
     `<tr><td>${i.nom_produit}</td><td>${i.quantite}</td><td>${(i.prix_unitaire * i.quantite).toFixed(2)} €</td></tr>`
   ).join('');
-  await transporter.sendMail({
-    from: '"Les Scellés Jouve" <' + process.env.SMTP_USER + '>',
+  await envoyer({
     to: email,
     subject: 'Confirmation commande ' + reference,
     html: '<h2>Merci ' + nom + ' !</h2><p>Votre commande <strong>' + reference + '</strong> a bien été reçue.</p><table border="1" cellpadding="6"><tr><th>Produit</th><th>Qté</th><th>Total</th></tr>' + lignes + '</table><p><strong>Total : ' + total.toFixed(2) + ' €</strong></p>'
@@ -22,8 +41,7 @@ exports.sendOrderConfirmation = async ({ reference, email, nom, items, total }) 
 };
 
 exports.sendBatNotification = async ({ email, nom, reference }) => {
-  await transporter.sendMail({
-    from: '"Les Scellés Jouve" <' + process.env.SMTP_USER + '>',
+  await envoyer({
     to: email,
     subject: 'Bon à Tirer disponible — Commande ' + reference,
     html: '<h2>Votre BAT est prêt, ' + nom + '</h2><p>Votre Bon à Tirer pour la commande <strong>' + reference + '</strong> est disponible. Merci de le valider pour lancer la fabrication.</p>'
@@ -44,8 +62,7 @@ exports.sendNouvelleCommandeCachet = async ({ reference, client_nom, client_emai
     '</li>'
   ).join('');
 
-  await transporter.sendMail({
-    from: '"Site Les Scelles Jouve" <' + process.env.SMTP_USER + '>',
+  await envoyer({
     to: destinataire,
     subject: 'Nouvelle commande de cachet a graver — ' + reference,
     html:
@@ -56,5 +73,23 @@ exports.sendNouvelleCommandeCachet = async ({ reference, client_nom, client_emai
       '<ul>' + lignes + '</ul>' +
       '<p>Connectez-vous &agrave; votre espace de gestion pour consulter le logo et pr&eacute;parer le BAT.</p>' +
       '<p style="color:#888;font-size:13px">D&eacute;lai annonc&eacute; au client : 6 jours ouvr&eacute;s.</p>'
+  });
+};
+
+// Formulaire de contact du site
+exports.envoyerContact = async ({ nom, email, telephone, organisme, sujet, message }) => {
+  const destinataire = process.env.CONTACT_EMAIL || 'contact@stejouve.fr';
+  await envoyer({
+    to: destinataire,
+    replyTo: email,
+    subject: 'Nouveau message du site — ' + (sujet || 'Contact'),
+    html:
+      '<h2>Nouveau message depuis le site</h2>' +
+      '<p><strong>Nom :</strong> ' + nom + '</p>' +
+      '<p><strong>Email :</strong> ' + email + '</p>' +
+      '<p><strong>Telephone :</strong> ' + (telephone || 'non renseigne') + '</p>' +
+      '<p><strong>Organisme :</strong> ' + (organisme || 'non renseigne') + '</p>' +
+      '<p><strong>Sujet :</strong> ' + (sujet || 'non renseigne') + '</p>' +
+      '<hr><p><strong>Message :</strong></p><p>' + String(message).replace(/\n/g, '<br>') + '</p>'
   });
 };

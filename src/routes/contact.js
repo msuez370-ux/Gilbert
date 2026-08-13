@@ -1,14 +1,7 @@
 const router = require('express').Router();
-const nodemailer = require('nodemailer');
+const { envoyerContact } = require('../services/emailService');
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000
-});
+
 
 router.post('/', async (req, res) => {
   const { nom, email, telephone, organisme, sujet, message } = req.body;
@@ -21,21 +14,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    await transporter.sendMail({
-      from: '"Site Les Scelles Jouve" <' + process.env.SMTP_USER + '>',
-      to: process.env.CONTACT_EMAIL || 'societejouve13@gmail.com',
-      replyTo: email,
-      subject: 'Nouveau message du site — ' + (sujet || 'Contact'),
-      html: '<h2>Nouveau message depuis le site</h2>' +
-        '<p><strong>Nom :</strong> ' + nom + '</p>' +
-        '<p><strong>Email :</strong> ' + email + '</p>' +
-        '<p><strong>Telephone :</strong> ' + (telephone || 'non renseigne') + '</p>' +
-        '<p><strong>Organisme :</strong> ' + (organisme || 'non renseigne') + '</p>' +
-        '<p><strong>Sujet :</strong> ' + (sujet || 'non renseigne') + '</p>' +
-        '<hr>' +
-        '<p><strong>Message :</strong></p>' +
-        '<p>' + message.replace(/\n/g, '<br>') + '</p>'
-    });
+    await envoyerContact({ nom, email, telephone, organisme, sujet, message });
     res.json({ success: true });
   } catch (e) {
     console.log('Erreur envoi contact :', e.message);
