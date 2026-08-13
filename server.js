@@ -112,7 +112,14 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), (req, res
   try {
     const event = constructWebhookEvent(req.body, sig);
     if (event.type === 'payment_intent.succeeded') {
-      console.log('Paiement Stripe confirmé :', event.data.object.id);
+      const pi = event.data.object;
+      const { tracer } = require("./src/services/journalService");
+      tracer({
+        type: "paiement_confirme",
+        message: (pi.amount / 100).toFixed(2) + " EUR confirme par Stripe",
+        email: pi.receipt_email || null,
+        reference: pi.id
+      });
     }
     res.json({ received: true });
   } catch (e) {
