@@ -13,19 +13,33 @@ const EXPEDITEUR = process.env.MAIL_FROM || "Les Scelles Jouve <contact@stejouve
 // Envoie via Resend si une cle API est presente, sinon via SMTP.
 // Railway bloque les ports SMTP : en production, Resend est indispensable.
 async function envoyer({ to, subject, html, replyTo }) {
-  if (process.env.RESEND_API_KEY) {
-    const { Resend } = require("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { error } = await resend.emails.send({
-      from: EXPEDITEUR,
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      html,
-      replyTo: replyTo || undefined
+  const destinataires = (Array.isArray(to) ? to : [to]).map(e => ({ email: e }));
+
+  // Brevo en priorite : Railway bloque les ports SMTP sortants
+  if (process.env.BREVO_API_KEY) {
+    const r = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": process.env.BREVO_API_KEY,
+        "Content-Type": "application/json",
+        "accept": "application/json"
+      },
+      body: JSON.stringify({
+        sender: { name: "Les Scelles Jouve", email: process.env.MAIL_FROM || "contact@stejouve.fr" },
+        to: destinataires,
+        subject,
+        htmlContent: html,
+        replyTo: replyTo ? { email: replyTo } : undefined
+      })
     });
-    if (error) throw new Error(error.message || "Echec Resend");
+    if (!r.ok) {
+      const detail = await r.text();
+      throw new Error("Brevo " + r.status + " : " + detail.slice(0, 200));
+    }
     return;
   }
+
+  // Repli SMTP pour le developpement local
   await transporter.sendMail({ from: EXPEDITEUR, to, subject, html, replyTo });
 }
 
