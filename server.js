@@ -53,7 +53,11 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // Parsing
-app.use(express.json());
+// Le webhook Stripe a besoin du corps brut : on l exclut du parsing JSON
+app.use((req, res, next) => {
+  if (req.originalUrl === "/webhook/stripe") return next();
+  express.json()(req, res, next);
+});
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
