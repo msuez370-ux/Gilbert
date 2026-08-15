@@ -62,11 +62,7 @@ router.post('/stripe/intent', async (req, res) => {
 
 // Expose la cle publique Stripe : un seul endroit a modifier en production
 router.get("/config", (req, res) => {
-  const sk = process.env.STRIPE_SECRET_KEY || "";
-  res.json({
-    publicKey: process.env.STRIPE_PUBLIC_KEY || "",
-    diag: { skDebut: sk.slice(0,8), skLongueur: sk.length, skTirets: (sk.match(/-/g)||[]).length }
-  });
+  res.json({ publicKey: process.env.STRIPE_PUBLIC_KEY || "" });
 });
 
 module.exports = router;
