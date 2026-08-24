@@ -54,7 +54,7 @@
   <div class="section-view active" id="view-commandes">
     <table>
       <thead>
-        <tr><th>Référence</th><th>Client</th><th>Email</th><th>Total</th><th>Statut</th><th>Date</th></tr>
+        <tr><th>Référence</th><th>Client</th><th>Email</th><th>Total</th><th>Statut</th><th>Date</th><th>Documents</th></tr>
       </thead>
       <tbody id="commandes-body"></tbody>
     </table>
@@ -96,6 +96,12 @@ async function loadCommandes() {
         <td data-label="Total">${Number(c.total).toFixed(2)} €</td>
         <td data-label="Statut"><span class="statut s-attente">${c.statut}</span></td>
         <td data-label="Date">${new Date(c.created_at).toLocaleDateString('fr-FR')}</td>
+        <td data-label="Documents" style="white-space:nowrap">
+          <a href="/api/admin/commandes/${c.id}/facture" target="_blank" title="Facture"
+             style="display:inline-block;padding:.3rem .6rem;background:var(--bleu);color:#fff;border-radius:4px;font-size:.75rem;text-decoration:none;margin-right:.3rem">Facture</a>
+          <a href="/api/admin/commandes/${c.id}/bon-livraison" target="_blank" title="Bon de livraison"
+             style="display:inline-block;padding:.3rem .6rem;background:#fff;color:var(--bleu);border:1px solid var(--bleu);border-radius:4px;font-size:.75rem;text-decoration:none">BL</a>
+        </td>
       </tr>`).join('');
   } catch(e) {
     document.getElementById('commandes-empty').style.display = 'block';

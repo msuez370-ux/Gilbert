@@ -60,7 +60,18 @@ exports.create = async (req, res) => {
     conn.release();
 
     try {
-      await sendOrderConfirmation({ reference: ref, email: client.email, nom: client.nom, items, total });
+      // Genere la facture et la joint a la confirmation
+      let facturePdf = null, factureNumero = null;
+      try {
+        const { genererFacture } = require("../services/documentService");
+        const doc = await genererFacture(orderId);
+        facturePdf = doc.buffer;
+        factureNumero = doc.numero;
+      } catch (docErr) {
+        console.log("Facture non generee :", docErr.message);
+      }
+
+      await sendOrderConfirmation({ reference: ref, email: client.email, nom: client.nom, items, total, facturePdf, factureNumero });
       if (cachets.length) {
         await sendNouvelleCommandeCachet({
           reference: ref,

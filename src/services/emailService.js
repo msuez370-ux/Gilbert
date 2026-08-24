@@ -12,7 +12,7 @@ const EXPEDITEUR = process.env.MAIL_FROM || "Les Scelles Jouve <contact@stejouve
 
 // Envoie via Resend si une cle API est presente, sinon via SMTP.
 // Railway bloque les ports SMTP : en production, Resend est indispensable.
-async function envoyer({ to, subject, html, replyTo }) {
+async function envoyer({ to, subject, html, replyTo, pieceJointe }) {
   const destinataires = (Array.isArray(to) ? to : [to]).map(e => ({ email: e }));
 
   // Brevo en priorite : Railway bloque les ports SMTP sortants
@@ -29,7 +29,8 @@ async function envoyer({ to, subject, html, replyTo }) {
         to: destinataires,
         subject,
         htmlContent: html,
-        replyTo: replyTo ? { email: replyTo } : undefined
+        replyTo: replyTo ? { email: replyTo } : undefined,
+        attachment: pieceJointe ? [{ name: pieceJointe.nom, content: pieceJointe.buffer.toString("base64") }] : undefined
       })
     });
     if (!r.ok) {
@@ -40,14 +41,15 @@ async function envoyer({ to, subject, html, replyTo }) {
   }
 
   // Repli SMTP pour le developpement local
-  await transporter.sendMail({ from: EXPEDITEUR, to, subject, html, replyTo });
+  await transporter.sendMail({ from: EXPEDITEUR, to, subject, html, replyTo, attachments: pieceJointe ? [{ filename: pieceJointe.nom, content: pieceJointe.buffer }] : undefined });
 }
 
-exports.sendOrderConfirmation = async ({ reference, email, nom, items, total }) => {
+exports.sendOrderConfirmation = async ({ reference, email, nom, items, total, facturePdf, factureNumero }) => {
   const lignes = items.map(i =>
     `<tr><td>${i.nom_produit}</td><td>${i.quantite}</td><td>${(i.prix_unitaire * i.quantite).toFixed(2)} €</td></tr>`
   ).join('');
   await envoyer({
+    pieceJointe: facturePdf ? { nom: (factureNumero || "facture") + ".pdf", buffer: facturePdf } : undefined,
     to: email,
     subject: 'Confirmation commande ' + reference,
     html: '<h2>Merci ' + nom + ' !</h2><p>Votre commande <strong>' + reference + '</strong> a bien été reçue.</p><table border="1" cellpadding="6"><tr><th>Produit</th><th>Qté</th><th>Total</th></tr>' + lignes + '</table><p><strong>Total : ' + total.toFixed(2) + ' €</strong></p>'

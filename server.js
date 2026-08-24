@@ -162,6 +162,17 @@ async function initialiserTables() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_nom (nom)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+    await db.query(`CREATE TABLE IF NOT EXISTS documents (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      type VARCHAR(20) NOT NULL,
+      numero VARCHAR(30) NOT NULL UNIQUE,
+      annee INT NOT NULL,
+      rang INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_doc (order_id, type),
+      INDEX idx_serie (type, annee, rang)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
     console.log("Tables techniques verifiees");
   } catch (e) {
     console.log("Init tables :", e.message);
