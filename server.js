@@ -11,6 +11,15 @@ const app = express();
 // Sécurité
 // Railway place l app derriere un proxy : indispensable pour les cookies secure
 app.set("trust proxy", 1);
+
+// Ancien domaine : redirection permanente (301) en conservant le chemin
+app.use((req, res, next) => {
+  const hote = (req.headers.host || "").toLowerCase();
+  if (hote === "societejouve.fr" || hote === "www.societejouve.fr") {
+    return res.redirect(301, "https://www.stejouve.fr" + req.originalUrl);
+  }
+  next();
+});
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
