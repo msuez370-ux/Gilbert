@@ -92,6 +92,25 @@ exports.sendNouvelleCommandeCachet = async ({ reference, client_nom, client_emai
   });
 };
 
+// Alerte Gilbert pour toute nouvelle commande
+exports.sendNouvelleCommande = async ({ reference, client_nom, client_email, items, total }) => {
+  const destinataire = process.env.CONTACT_EMAIL || "societejouve13@gmail.com";
+  const lignes = (items || []).map(i =>
+    "<li>" + (i.nom || i.name || "Article") + " &times; " + (i.quantite || i.qty || 1) + "</li>"
+  ).join("");
+  await envoyer({
+    to: destinataire,
+    subject: "Nouvelle commande sur le site — " + reference,
+    html:
+      "<h2>Nouvelle commande</h2>" +
+      "<p><strong>R&eacute;f&eacute;rence :</strong> " + reference + "</p>" +
+      "<p><strong>Client :</strong> " + client_nom + " (" + client_email + ")</p>" +
+      "<p><strong>Montant :</strong> " + Number(total).toFixed(2) + " &euro;</p>" +
+      "<ul>" + lignes + "</ul>" +
+      "<p>D&eacute;tail, facture et bon de livraison dans votre espace de gestion.</p>"
+  });
+};
+
 // Formulaire de contact du site
 exports.envoyerContact = async ({ nom, email, telephone, organisme, sujet, message }) => {
   const destinataire = process.env.CONTACT_EMAIL || 'contact@stejouve.fr';

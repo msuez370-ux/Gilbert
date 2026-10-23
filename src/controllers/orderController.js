@@ -71,6 +71,14 @@ exports.create = async (req, res) => {
         console.log("Facture non generee :", docErr.message);
       }
 
+      try {
+        await require("../services/emailService").sendNouvelleCommande({
+          reference: ref, client_nom: client.nom, client_email: client.email, items, total
+        });
+      } catch (alerteErr) {
+        console.log("Alerte commande non envoyee :", alerteErr.message);
+      }
+
       await sendOrderConfirmation({ reference: ref, email: client.email, nom: client.nom, items, total, facturePdf, factureNumero });
       if (cachets.length) {
         await sendNouvelleCommandeCachet({
